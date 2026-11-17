@@ -1,61 +1,92 @@
-// Every tuning number and colour in one place. The playfield is a fixed 1280x720 logical area;
-// the renderer scales it to the window, so no rule below depends on the screen size.
-
-export const FIELD = { width: 1280, height: 720, groundY: 664 };
-
-/** The simulation's fixed step, in seconds: 60 updates a second whatever the display's rate. */
-export const STEP = 1 / 60;
-
-export const PLAYER = {
-  width: 72,
-  height: 24,
-  speed: 560,
-  invulnerable: 1.5,
+// Solmar Bay — tuning and palette. One job: every number the game balances on.
+// The city is a sun-soaked harbour town of our own invention: no real place, no
+// borrowed names. All values below were picked for a top-down 2D open world.
+export const WORLD = {
+  size: 2400,
+  roadGap: 400,
+  roadWidth: 96,
+  firstRoad: 200,
+  blockPad: 26,
 };
-
-export const LIVES = 3;
-
-export const BLOCK = {
-  minWidth: 40,
-  maxWidth: 110,
-  height: 36,
-  speed: 240,
-  speedPerLevel: 30,
-  speedJitter: 90,
-  interval: 0.55,
-  intervalScale: 0.88,
-  minInterval: 0.14,
-  dodgePoints: 1,
-};
-
-export const COIN = {
-  size: 24,
-  speed: 190,
-  speedPerLevel: 14,
-  interval: 1.4,
-  intervalJitter: 0.8,
-  points: 10,
-};
-
-/** Seconds of play per level, and the last level: speeds and spawn rates stop growing there. */
-export const LEVEL = { seconds: 12, max: 12 };
-
-/** How many falling things can exist at once; the pool is allocated once, at boot. */
-export const POOL_SIZE = 64;
 
 export const PALETTE = {
-  backdrop: '#11141b',
-  sky: '#1b1f2a',
-  ground: '#2a3040',
-  player: '#4fc3f7',
-  block: '#e5534b',
-  coin: '#f2c94c',
-  panel: '#252b38',
-  text: '#eef1f5',
-  muted: '#8b93a3',
+  grass: '#7fae5a',
+  grassDark: '#6f9c4e',
+  sand: '#e3c98f',
+  water: '#2f7fb8',
+  waterDeep: '#256a9e',
+  road: '#3a3f4a',
+  roadLine: '#e8d44d',
+  sidewalk: '#b9b3a4',
+  buildingRoof: ['#c96f4a', '#4a7ec9', '#c9a44a', '#7a4ac9', '#4ac9a0', '#c94a6b'],
+  buildingEdge: '#2b2b33',
+  park: '#5d9b4a',
+  player: '#ffd23f',
+  police: '#2f6fd0',
+  traffic: ['#d84a4a', '#4ad8d8', '#e8e8e8', '#8a5ad8', '#5ad88a', '#d88a2f'],
+  ped: ['#e8b88a', '#8a6a4a', '#4a4a6a', '#c9c9c9', '#6a8a4a'],
 };
 
-export const FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+export const PLAYER = {
+  radius: 13,
+  walkSpeed: 210,
+  runSpeed: 320,
+  health: 100,
+  punchRange: 34,
+  shootCooldown: 0.28,
+  bulletSpeed: 640,
+  bulletRange: 520,
+};
 
-/** Where the best score is kept between visits (this browser only). */
-export const BEST_KEY = 'block-dodger.best';
+export const CAR = {
+  length: 54,
+  width: 26,
+  accel: 420,
+  brake: 620,
+  reverseAccel: 220,
+  maxSpeed: 520,
+  maxReverse: 160,
+  steer: 2.6,
+  grip: 0.94,
+  enterRange: 70,
+};
+
+export const TRAFFIC_COUNT = 14;
+export const PED_COUNT = 26;
+export const POLICE_MAX = 5;
+
+export const WANTED = {
+  decayDelay: 6,
+  decayInterval: 4,
+  bustTime: 2.2,
+  starForSteal: 1,
+  starForHitPed: 1,
+  starForShoot: 1,
+  max: 5,
+};
+
+export const MISSIONS = [
+  {
+    id: 'hot-wheels',
+    title: 'Hot Wheels',
+    brief: 'Borrow a car. Any car. Press E near one.',
+    reward: 200,
+  },
+  {
+    id: 'bay-run',
+    title: 'Bay Run',
+    brief: 'Drive to the pier marker before the timer runs out.',
+    reward: 500,
+    timeLimit: 90,
+  },
+  {
+    id: 'heat-wave',
+    title: 'Heat Wave',
+    brief: 'The heat is on. Lose the cops — get wanted back to zero.',
+    reward: 800,
+  },
+];
+
+export const SAVE_KEY = 'solmarbay-save-v1';
+export const START_CASH = 50;
+export const CARJACK_CASH = 25;

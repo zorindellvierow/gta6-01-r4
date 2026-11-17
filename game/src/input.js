@@ -1,53 +1,82 @@
-// Keyboard and pointer input. Held keys give a steering direction; one-shot presses (start or
-// restart, pause) are queued as bit flags and taken once by the loop, so a press between two
-// frames is never lost and never counted twice.
+// Keyboard + mouse input. One job: turn browser events into a clean queryable
+// state (held keys, just-pressed edges, mouse position and clicks) for main.js.
+export class Input {
+  constructor(canvas) {
+    this.keys = new Set();
+    this.justPressed = new Set();
+    this.mouse = { x: 0, y: 0, down: false, clicked: false };
+    this.canvas = canvas;
+    this.onFirstGesture = null;
+    this._gestured = false;
+    this._onKeyDown = (event) => {
+      const gameKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'];
+      if (gameKeys.includes(event.code) || gameKeys.includes(event.key)) {
+        event.preventDefault();
+      }
+      if (!event.repeat) {
+        this.keys.add(event.code);
+        this.justPressed.add(event.code);
+      }
+      this._gesture();
+    };
+    this._onKeyUp = (event) => {
+      this.keys.delete(event.code);
+    };
+    this._onMouseMove = (event) => {
+      const rect = this.canvas.getBoundingClientRect();
+      this.mouse.x = event.clientX - rect.left;
+      this.mouse.y = event.clientY - rect.top;
+    };
+    this._onMouseDown = (event) => {
+      this._onMouseMove(event);
+      this.mouse.down = true;
+      this.mouse.clicked = true;
+      this._gesture();
+    };
+    this._onMouseUp = () => {
+      this.mouse.down = false;
+    };
+    this._onBlur = () => {
+      this.keys.clear();
+      this.mouse.down = false;
+    };
+    window.addEventListener('keydown', this._onKeyDown);
+    window.addEventListener('keyup', this._onKeyUp);
+    window.addEventListener('blur', this._onBlur);
+    this.canvas.addEventListener('mousemove', this._onMouseMove);
+    this.canvas.addEventListener('mousedown', this._onMouseDown);
+    window.addEventListener('mouseup', this._onMouseUp);
+  }
 
-export const ACTION_CONFIRM = 1;
-export const ACTION_PAUSE = 2;
+  _gesture() {
+    if (!this._gestured) {
+      this._gestured = true;
+      if (typeof this.onFirstGesture === 'function') this.onFirstGesture();
+    }
+  }
 
-const LEFT = new Set(['ArrowLeft', 'KeyA']);
-const RIGHT = new Set(['ArrowRight', 'KeyD']);
-const CONFIRM = new Set(['Space', 'Enter']);
-const PAUSE = new Set(['KeyP', 'Escape']);
+  down(code) {
+    return this.keys.has(code);
+  }
 
-export function createInput(target) {
-  let left = false;
-  let right = false;
-  let actions = 0;
+  pressed(code) {
+    return this.justPressed.has(code);
+  }
 
-  window.addEventListener('keydown', (event) => {
-    if (LEFT.has(event.code)) left = true;
-    else if (RIGHT.has(event.code)) right = true;
-    else if (CONFIRM.has(event.code)) {
-      if (!event.repeat) actions |= ACTION_CONFIRM;
-    } else if (PAUSE.has(event.code)) {
-      if (!event.repeat) actions |= ACTION_PAUSE;
-    } else return;
-    event.preventDefault();
-  });
-  window.addEventListener('keyup', (event) => {
-    if (LEFT.has(event.code)) left = false;
-    else if (RIGHT.has(event.code)) right = false;
-  });
-  // A key released while the tab is hidden never sends keyup: let go of everything on blur.
-  window.addEventListener('blur', () => {
-    left = false;
-    right = false;
-  });
-  target.addEventListener('pointerdown', () => {
-    actions |= ACTION_CONFIRM;
-  });
+  anyPressed(codes) {
+    return codes.some((code) => this.justPressed.has(code));
+  }
 
-  return {
-    /** -1 for left, 1 for right, 0 for neither or both. */
-    direction() {
-      return (right ? 1 : 0) - (left ? 1 : 0);
-    },
-    /** The one-shot presses since the last call, as ACTION_* flags. */
-    takeActions() {
-      const taken = actions;
-      actions = 0;
-      return taken;
-    },
-  };
+  axis(negCode, posCode) {
+    let value = 0;
+    if (this.down(negCode)) value -= 1;
+    if (this.down(posCode)) value += 1;
+    return value;
+  }
+
+  // Call once per frame after the game has read the edges.
+  endFrame() {
+    this.justPressed.clear();
+    this.mouse.clicked = false;
+  }
 }
