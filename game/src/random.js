@@ -13,7 +13,7 @@ export function mulberry32(seed) {
 
 export function makeRng(seed) {
   const next = mulberry32(seed);
-  return {
+  const api = {
     next,
     range(min, max) {
       return min + next() * (max - min);
@@ -38,6 +38,10 @@ export function makeRng(seed) {
       return copy;
     },
   };
+  // Callers also use the rng as a plain function (rng()), so return a
+  // callable with the helpers attached instead of a bare object.
+  const rng = function () { return next(); };
+  return Object.assign(rng, api);
 }
 
 export function clamp(value, min, max) {

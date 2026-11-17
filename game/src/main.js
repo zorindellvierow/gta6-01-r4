@@ -130,11 +130,11 @@ function spawnTraffic() {
   game.traffic = [];
   const roads = roadCenters();
   for (let i = 0; i < TRAFFIC_COUNT; i++) {
-    const r = roads[Math.floor(game.rng() * roads.length)];
+    const pos = roads[Math.floor(game.rng() * roads.length)];
     const along = game.rng() * WORLD.size;
-    const horiz = r.axis === 'h';
-    const x = horiz ? along : r.pos + (game.rng() < 0.5 ? -24 : 24);
-    const y = horiz ? r.pos + (game.rng() < 0.5 ? -24 : 24) : along;
+    const horiz = game.rng() < 0.5;
+    const x = horiz ? along : pos + (game.rng() < 0.5 ? -24 : 24);
+    const y = horiz ? pos + (game.rng() < 0.5 ? -24 : 24) : along;
     const angle = horiz ? (game.rng() < 0.5 ? 0 : Math.PI) : (game.rng() < 0.5 ? Math.PI / 2 : -Math.PI / 2);
     const car = makeCar(x, y, angle, colors[Math.floor(game.rng() * colors.length)], game.rng);
     car.speed = 90 + game.rng() * 90;
@@ -385,15 +385,19 @@ function updateTraffic(dt) {
       car.y = clamp(car.y, 30, WORLD.size - 30);
     }
     // Keep traffic on roads: nudge back toward nearest road centre.
+    // roadCenters() returns plain centre positions; each centre is both a
+    // horizontal and a vertical road, so use the nearer axis.
     if (!isOnRoad(car.x, car.y)) {
       const roads = roadCenters();
-      let best = roads[0], bd = Infinity;
+      let best = roads[0], bd = Infinity, bestHoriz = true;
       for (const r of roads) {
-        const d = r.axis === 'h' ? Math.abs(car.y - r.pos) : Math.abs(car.x - r.pos);
-        if (d < bd) { bd = d; best = r; }
+        const dh = Math.abs(car.y - r);
+        const dv = Math.abs(car.x - r);
+        const d = Math.min(dh, dv);
+        if (d < bd) { bd = d; best = r; bestHoriz = dh <= dv; }
       }
-      if (best.axis === 'h') car.y = lerp(car.y, best.pos, Math.min(1, dt * 2));
-      else car.x = lerp(car.x, best.pos, Math.min(1, dt * 2));
+      if (bestHoriz) car.y = lerp(car.y, best, Math.min(1, dt * 2));
+      else car.x = lerp(car.x, best, Math.min(1, dt * 2));
     }
     const body = { x: car.x, y: car.y, radius: 22 };
     resolveBuildingCollision(game.city, body);
